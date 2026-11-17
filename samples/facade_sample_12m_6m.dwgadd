@@ -1,0 +1,79 @@
+version 2000
+HEADER.INSUNITS = 4
+HEADER.MEASUREMENT = 1
+HEADER.LUNITS = 2
+HEADER.LUPREC = 0
+layer "WALL_OUTLINE"
+layer "WINDOW_OPENINGS"
+layer "DOOR_OPENING"
+layer "SUPPORT_AXES"
+layer "DIMENSIONS"
+layer "NOTES"
+lwpolyline 4 ((0 0) (12000 0) (12000 6000) (0 6000))
+lwpolyline.flag = 512
+lwpolyline.layer = "WALL_OUTLINE"
+lwpolyline 4 ((1500 2400) (3000 2400) (3000 3600) (1500 3600))
+lwpolyline.flag = 512
+lwpolyline.layer = "WINDOW_OPENINGS"
+lwpolyline 4 ((7500 2400) (9000 2400) (9000 3600) (7500 3600))
+lwpolyline.flag = 512
+lwpolyline.layer = "WINDOW_OPENINGS"
+lwpolyline 4 ((5100 0) (6300 0) (6300 2400) (5100 2400))
+lwpolyline.flag = 512
+lwpolyline.layer = "DOOR_OPENING"
+line (-200 0 0) (12200 0 0)
+line.layer = "SUPPORT_AXES"
+line (-200 1200 0) (12200 1200 0)
+line.layer = "SUPPORT_AXES"
+line (-200 2400 0) (12200 2400 0)
+line.layer = "SUPPORT_AXES"
+line (-200 3600 0) (12200 3600 0)
+line.layer = "SUPPORT_AXES"
+line (-200 4800 0) (12200 4800 0)
+line.layer = "SUPPORT_AXES"
+line (-200 6000 0) (12200 6000 0)
+line.layer = "SUPPORT_AXES"
+text "EAST ELEVATION / SYNTHETIC SAMPLE" (0 7200 0) 260
+text.layer = "NOTES"
+text "W01  1500 x 1200" (1550 2900 0) 130
+text.layer = "NOTES"
+text "W02  1500 x 1200" (7550 2900 0) 130
+text.layer = "NOTES"
+text "D01  1200 x 2400" (5150 1100 0) 110
+text.layer = "NOTES"
+text "SUPPORT AXES @ 1200 mm (ILLUSTRATIVE)" (0 -1500 0) 170
+text.layer = "NOTES"
+text "UNITS: mm / PANEL AND FIXING SPECIFICATIONS NOT DEFINED" (0 -1850 0) 145
+text.layer = "NOTES"
+text "SOFTWARE TEST ONLY - NOT FOR CONSTRUCTION" (0 -2200 0) 145
+text.layer = "NOTES"
+line (0 -150 0) (0 -800 0)
+line.layer = "DIMENSIONS"
+line (12000 -150 0) (12000 -800 0)
+line.layer = "DIMENSIONS"
+line (0 -600 0) (12000 -600 0)
+line.layer = "DIMENSIONS"
+line (-100 -700 0) (100 -500 0)
+line.layer = "DIMENSIONS"
+line (11900 -700 0) (12100 -500 0)
+line.layer = "DIMENSIONS"
+text "12000" (5500 -520 0) 180
+text.layer = "DIMENSIONS"
+line (-150 0 0) (-900 0 0)
+line.layer = "DIMENSIONS"
+line (-150 6000 0) (-900 6000 0)
+line.layer = "DIMENSIONS"
+line (-700 0 0) (-700 6000 0)
+line.layer = "DIMENSIONS"
+line (-800 -100 0) (-600 100 0)
+line.layer = "DIMENSIONS"
+line (-800 5900 0) (-600 6100 0)
+line.layer = "DIMENSIONS"
+text "6000" (-1350 2900 0) 180
+text.layer = "DIMENSIONS"
+dimension_aligned (0 0 0) (12000 0 0) (6000 -600 0)
+dimali.layer = "DIMENSIONS"
+dimali.act_measurement = 12000
+dimension_aligned (0 0 0) (0 6000 0) (-700 3000 0)
+dimali.layer = "DIMENSIONS"
+dimali.act_measurement = 6000

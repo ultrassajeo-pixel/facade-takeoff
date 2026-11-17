@@ -1,0 +1,53 @@
+{
+  "units": "mm",
+  "wall": {
+    "width": 12000,
+    "height": 6000,
+    "area_m2": 72
+  },
+  "windows": [
+    {
+      "x": 1500,
+      "y": 2400,
+      "width": 1500,
+      "height": 1200
+    },
+    {
+      "x": 7500,
+      "y": 2400,
+      "width": 1500,
+      "height": 1200
+    }
+  ],
+  "door": {
+    "x": 5100,
+    "y": 0,
+    "width": 1200,
+    "height": 2400
+  },
+  "opening_area_m2": 6.48,
+  "net_geometric_area_m2": 65.52,
+  "support_axes_mm": [
+    0,
+    1200,
+    2400,
+    3600,
+    4800,
+    6000
+  ],
+  "linear_dimensions_mm": [
+    12000,
+    6000
+  ],
+  "model_entity_count": 31,
+  "layers": {
+    "WALL_OUTLINE": 1,
+    "WINDOW_OPENINGS": 2,
+    "DOOR_OPENING": 1,
+    "SUPPORT_AXES": 6,
+    "DIMENSIONS": 14,
+    "NOTES": 7
+  },
+  "quantity_result": null,
+  "note": "Synthetic software fixture only. Net geometry area is not material quantity."
+}

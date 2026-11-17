@@ -1,0 +1,6 @@
+{
+  "version": "0.15.7",
+  "source": "https://registry.npmjs.org/polygon-clipping/-/polygon-clipping-0.15.7.tgz",
+  "archiveSHA256": "23bdea671a65011107d91536881f527c8e2e6820f59e4bc1408a94d7cc11d5b7",
+  "change": "UMD wrapper replaced by ESM default export; algorithm unchanged"
+}

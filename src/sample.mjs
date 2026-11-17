@@ -1,0 +1,6 @@
+import {suggestedRole,PROFILE_KINDS} from './rules.mjs';
+export function sampleConditions(drawing){
+ const inputs={units:'mm',scope:'개발용 샘플 · 동측 외벽',uniform:'yes',edgeOwnership:'allocated',panelSpec:'시험용 샌드위치판넬 100T (실제 제품 아님)',direction:'vertical',startSide:'low',panelWidth:1000,orderWidth:1000,maxLength:9000,seams:'없음',panelLap:0,trim:0,lengthStep:1,procurement:'custom',openings:'cut',reuse:'no',panelLoss:5,supportMode:'spacing',supportSpacing:1200,supportOffset:0,endSupport:'yes',boltSpec:'시험용 판넬 볼트',openingExtra:'none',endBolts:2,middleBolts:1,boltLoss:0,boltPack:100,screwSpec:'시험용 후레싱 피스',screwSpacing:300,screwRows:1,screwInset:50,lapScrews:2,screwLoss:0,screwPack:100,sealantSpec:'시험용 실리콘 300mL',beadWidth:6,beadDepth:6,beadShape:'rectangle',sealantLines:2,sealantBasis:'net',lapBeads:1,fillPercent:100,cartridgeMl:300,sealantLoss:10};
+ const profiles=Object.fromEntries(Object.keys(PROFILE_KINDS).map(k=>[k,{mode:k==='doorThreshold'?'none':'apply',spec:'시험용 절곡 후레싱 0.5T',stock:3000,lap:100,developed:200,loss:5,reuse:'no'}]));
+ return {roles:Object.fromEntries(drawing.shapes.filter(s=>s.closed).map(s=>[s.id,suggestedRole(s.layer)||'exclude'])),inputs,profiles,scopeConfirmed:true,scenario:'synthetic-example-v1'};
+}

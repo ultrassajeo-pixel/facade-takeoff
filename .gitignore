@@ -1,0 +1,20 @@
+# Local drawings, authentication, and generated state
+.runtime/
+.env
+.env.*
+.codex/
+.openai/
+node_modules/
+vendor/libredwg/
+vendor/pdfjs/
+verification/
+deployment/
+.DS_Store
+__pycache__/
+*.log
+*.facade.json
+*.facade.json.gz
+*.dwg
+!samples/*.dwg
+!tests/fixtures/**/*.dwg
+!tests/fixtures/*.dwg
