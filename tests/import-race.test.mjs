@@ -1,9 +1,10 @@
+import {makeTrace} from '../src/diagnostics.mjs';
 import test from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';import vm from 'node:vm';
 const source=await readFile(new URL('../src/app.mjs',import.meta.url),'utf8');
 // Exercise the actual UI readFiles function with deferred file decoding and a small DOM stub.
 const body=source.slice(source.indexOf('async function readFiles('),source.indexOf('\nfunction download(')).replaceAll('import.meta.url',"'http://localhost/src/app.mjs'");
 function setup(){
- const fields=new Map(),context=vm.createContext({token:0,project:{name:'original'},Array,URL,clearTimeout,setTimeout,
+ const fields=new Map(),context=vm.createContext({trace:makeTrace(null),token:0,project:{name:'original'},Array,URL,clearTimeout,setTimeout,
   $:id=>{if(!fields.has(id))fields.set(id,{hidden:true});return fields.get(id);},toast(){},
   readProjectFile:file=>file.value});
  context.cancelRead=()=>{context.token++;};context.setProject=p=>{context.project=p;};vm.runInContext(body,context);return context;

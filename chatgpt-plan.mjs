@@ -4,6 +4,9 @@ import {constants} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 const parentEnv=typeof process==='undefined'?{}:process.env;
+const loginInstruction = parentEnv.FACADE_PROJECT_DIRECTORY
+ ? '외벽산출 앱 창에서 ChatGPT 로그인을 눌러주세요.'
+ : 'connect-chatgpt.command를 실행해주세요.';
 export const REPLY_SCHEMA={type:'object',properties:{reply:{type:'string'},proposals:{type:'array',items:{type:'object',properties:{field:{type:'string'},value:{anyOf:[{type:'string'},{type:'number'}]},evidence:{type:'string'}},required:['field','value','evidence'],additionalProperties:false}}},required:['reply','proposals'],additionalProperties:false};
 // Authentication stays inside the official CLI. Never read, copy, or export its token store.
 // API credentials and provider overrides are not inherited by the subscription process.
@@ -16,7 +19,7 @@ export async function findCodex(source=parentEnv){
 export function loginKind(output){if(/logged in using chatgpt/i.test(output))return 'chatgpt';if(/api.?key/i.test(output))return 'api-key';return 'signed-out';}
 export async function chatgptStatus({binary,env=subscriptionEnvironment()}={}){
  binary||=await findCodex();if(!binary)return {available:false,authenticated:false,reason:'Codex 실행 파일을 찾지 못했습니다. ChatGPT 앱 또는 공식 Codex CLI가 필요합니다.'};
- return new Promise(resolve=>{execFile(binary,['login','status'],{env,timeout:10000,maxBuffer:65536,windowsHide:true},(error,stdout,stderr)=>{const kind=loginKind(stdout+'\n'+stderr),authenticated=!error&&kind==='chatgpt';resolve({available:true,authenticated,authType:kind,reason:authenticated?'이 Mac의 ChatGPT 로그인으로 연결되어 있습니다.':kind==='api-key'?'현재 Codex가 API 키로 로그인되어 있습니다. 구독 사용을 위해 ChatGPT 로그인이 필요합니다.':'ChatGPT 로그인이 필요합니다. connect-chatgpt.command를 실행해주세요.'});});});
+ return new Promise(resolve=>{execFile(binary,['login','status'],{env,timeout:10000,maxBuffer:65536,windowsHide:true},(error,stdout,stderr)=>{const kind=loginKind(stdout+'\n'+stderr),authenticated=!error&&kind==='chatgpt';resolve({available:true,authenticated,authType:kind,reason:authenticated?'이 Mac의 ChatGPT 로그인으로 연결되어 있습니다.':kind==='api-key'?'현재 Codex가 API 키로 로그인되어 있습니다. 구독 사용을 위해 ChatGPT 로그인이 필요합니다.':'ChatGPT 로그인이 필요합니다. '+loginInstruction});});});
 }
 export function sessionArgs(directory,model=''){
  const args=['exec','--ignore-user-config','--ephemeral','--skip-git-repo-check','--sandbox','read-only','--color','never','--json','--output-schema',path.join(directory,'schema.json'),'--output-last-message',path.join(directory,'reply.json'),'-C',directory,'-c','approval_policy="never"','-c','web_search="disabled"','-c','project_doc_max_bytes=0'];
@@ -26,7 +29,7 @@ export function sessionArgs(directory,model=''){
 }
 export function safeFailure(text){
  if(/usage.?limit|rate.?limit|quota|429|usage.?unavailable/i.test(text))return 'ChatGPT 구독 사용 한도에 도달했거나 현재 사용할 수 없습니다. 한도와 초기화 시간을 확인해주세요. 유료 API로 자동 전환하지 않습니다.';
- if(/401|unauthorized|not logged in|authentication|token.*expired/i.test(text))return 'ChatGPT 로그인이 만료되었거나 사용할 수 없습니다. connect-chatgpt.command로 다시 로그인해주세요.';
+ if(/401|unauthorized|not logged in|authentication|token.*expired/i.test(text))return 'ChatGPT 로그인이 만료되었거나 사용할 수 없습니다. '+loginInstruction;
  if(/unrecognized|unexpected argument|unknown feature|not.*supported/i.test(text))return '설치된 Codex 버전이 이 연결 방식 또는 선택 모델을 지원하지 않습니다. ChatGPT/Codex를 업데이트하거나 모델명을 확인해주세요.';
  return 'ChatGPT 구독 연결에서 응답을 완료하지 못했습니다. 로그인·네트워크·사용 한도를 확인해주세요. 유료 API로 자동 전환하지 않습니다.';
 }

@@ -48,9 +48,9 @@ export function validatePolygon(points){
 }
 const identity=[1,0,0,0,0,1,0,0,0,0,1,0];
 export function clipForInsert(db,e){
- const objects=db.objects||{},dicts=new Map((objects.DICTIONARY||[]).map(d=>[d.handle,d]));
  const ext=e.ownerDictionaryHardId||e.extensionDictionary;
  if(!ext||ext==='0')return null;
+ const objects=db.objects||{},dicts=new Map((objects.DICTIONARY||[]).map(d=>[d.handle,d]));
  const extension=dicts.get(ext);if(!extension)throw Error('XCLIP 확장 사전 연결을 해석할 수 없습니다.');
  const filterId=extension.entries?.ACAD_FILTER;if(!filterId)return null;
  const filters=dicts.get(filterId);if(!filters)throw Error('ACAD_FILTER 사전이 누락되었습니다.');

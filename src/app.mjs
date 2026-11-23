@@ -1,3 +1,15 @@
+import {makeTrace} from './diagnostics.mjs';
+import {connectFeedback} from './feedback-ui.mjs';
+let diagnosticStorage;
+try {
+  diagnosticStorage={
+    getItem(key){return sessionStorage.getItem(key) ?? localStorage.getItem(key);},
+    setItem(key,value){sessionStorage.setItem(key,value);localStorage.setItem(key,value);}
+  };
+} catch {}
+const trace=makeTrace(diagnosticStorage);
+connectFeedback(trace,download);
+window.addEventListener('error',()=>trace.mark('screen','failed'));
 import {prepareFiles,savedBundle,chooseMain} from './drawing-intake.mjs';
 import { DrawingViewer,layerColor } from './viewer.mjs';
 import { createTakeoffUI } from './takeoff-ui.mjs';
@@ -15,8 +27,8 @@ const dbPromise=new Promise((resolve,reject)=>{
   request.onupgradeneeded=()=>request.result.createObjectStore('projects');
   request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
 });
-async function stored(mode,value){const db=await dbPromise;return new Promise((resolve,reject)=>{const tx=db.transaction('projects',mode==='get'?'readonly':'readwrite'),store=tx.objectStore('projects');const req=mode==='get'?store.get('current'):store.put(value,'current');req.onsuccess=()=>{if(mode==='get')resolve(req.result);};tx.oncomplete=()=>{if(mode!=='get')resolve();};tx.onerror=()=>reject(tx.error);});}
-function scheduleSave(){clearTimeout(saveTimer);$('save-status').textContent='저장 중…';saveTimer=setTimeout(async()=>{try{await stored('put',project);$('save-status').textContent='이 브라우저에 저장됨';}catch{$('save-status').textContent='자동 저장 실패 · 프로젝트 저장을 이용해주세요';toast('브라우저 저장 공간에 저장하지 못했습니다. 프로젝트 저장으로 파일을 보관해주세요.');}},250);}
+async function stored(mode,value){const db=await dbPromise;return new Promise((resolve,reject)=>{const tx=db.transaction('projects',mode==='get'?'readonly':'readwrite'),store=tx.objectStore('projects');const req=mode==='get'?store.get('current'):store.put(value,'current');req.onsuccess=()=>{if(mode==='get')resolve(req.result);};tx.oncomplete=()=>{if(mode!=='get')resolve();};tx.onabort=tx.onerror=()=>reject(tx.error);});}
+function scheduleSave(){clearTimeout(saveTimer);$('save-status').textContent='저장 중…';const mark=trace.bind();saveTimer=setTimeout(async()=>{mark('save','start');try{await stored('put',project);mark('save','ok');$('save-status').textContent='이 브라우저에 저장됨';}catch{mark('save','failed');$('save-status').textContent='자동 저장 실패 · 프로젝트 저장을 이용해주세요';toast('브라우저 저장 공간에 저장하지 못했습니다. 프로젝트 저장으로 파일을 보관해주세요.');}},250);}
 stored('get').then(saved=>{if(saved?.drawing){$('restore').hidden=false;$('restore').onclick=()=>{cancelRead(false);setProject(saved);$('restore').hidden=true;toast('이전 작업과 답변을 복원했습니다.');};}}).catch(()=>$('save-status').textContent='브라우저 저장 불가');
 function setProject(value){project=validateProject(value);project.answers||={};project.history||=[];activeQuestion=null;$('project-name').value=project.name;$('filename').textContent=project.file.name;$('filemeta').textContent=`${(project.file.size/1024).toFixed(0)} KB · ${project.drawing.version||'DWG'}`;$('empty').hidden=true;$('export').disabled=false;$('share-current').disabled=false;$('viewer-badge').hidden=false;$('step-state').textContent=project.drawing.issues.some(i=>i.level==='blocker')?'추가 확인 필요':'읽기 완료';$('selected').hidden=true;viewer.load(project.drawing);ui.initialize();renderLayers();renderReferences();renderState();scheduleSave();}
 function renderReferences(){
@@ -40,39 +52,45 @@ function renderData(){const d=project.drawing,root=$('right-content');root.inner
   for(const text of d.texts.slice(0,150)){const el=document.createElement('div');el.className='extract-text';el.textContent=text.text;const small=document.createElement('small');small.textContent=text.layer+' · '+text.handle;el.append(small);root.append(el);}
   $('export-raw').onclick=()=>download(project.raw||'{}',project.file.name+'.parsed.json');
 }
-function cancelRead(show=true){token++;if(worker){worker.terminate();worker=null;if(show)toast('도면 읽기를 취소했습니다. 기존 작업은 유지됩니다.');}clearTimeout(workerTimer);$('loading').hidden=true;}
+function cancelRead(show=true){token++;if(worker){if(show)trace.mark('parse','cancelled');worker.terminate();worker=null;if(show)toast('도면 읽기를 취소했습니다. 기존 작업은 유지됩니다.');}clearTimeout(workerTimer);$('loading').hidden=true;}
 async function readFile(file){return readFiles([file]);}
 async function readFiles(selection,attach=false){
  const files=Array.from(selection).filter(Boolean);if(!files.length)return;
  if(!attach&&files.length===1&&/\.(?:json|gz)$/i.test(files[0].name)){
-  cancelRead(false);const current=++token;$('loading').hidden=false;$('loading-message').textContent='저장 프로젝트를 읽고 있습니다.';
-  try{const value=await readProjectFile(files[0]);if(current!==token)return;setProject(value);toast('프로젝트를 불러왔습니다.');}
-  catch(e){if(current===token)toast('불러오기 실패: '+e.message);}
+  cancelRead(false);const current=++token;trace.begin();const mark=trace.bind();$('loading').hidden=false;$('loading-message').textContent='저장 프로젝트를 읽고 있습니다.';
+  mark('restore','start');try{const value=await readProjectFile(files[0]);if(current!==token)return;setProject(value);mark('restore','ok');toast('프로젝트를 불러왔습니다.');}
+  catch(e){mark('restore','failed');if(current===token)toast('불러오기 실패: '+e.message);}
   finally{if(current===token)$('loading').hidden=true;}return;
  }
- cancelRead(false);const current=++token;
+ cancelRead(false);const current=++token;trace.begin();const mark=trace.bind();
  try{
-  const cached=attach?savedBundle(project):null;
+  mark('select','start',{files:files.length,bytes:files.reduce((n,f)=>n+f.size,0)});
+  const baseProject=project;
+  const cached=attach?savedBundle({raw:baseProject.raw instanceof Blob?await baseProject.raw.text():baseProject.raw}):null;
+  if(current!==token)return;
   // Check count and total size before reading any bytes.
   const sources=await prepareFiles(files,cached);if(current!==token)return;
   const mainPath=cached?.mainPath||(sources.length===1?sources[0].path:await chooseMain(sources.map(s=>s.path)));
-  if(!mainPath||current!==token)return;
+  if(!mainPath||current!==token){mark('select','cancelled');return;}
+  mark('select','ok',{mainIndex:sources.findIndex(s=>s.path===mainPath)});
   const name=$('project-name').value||'새 외벽 프로젝트';
   $('loading').hidden=false;$('loading-message').textContent='파일을 준비하고 있습니다.';
   worker=new Worker(new URL('./dwg-worker.mjs',import.meta.url),{type:'module'});
-  const fail=message=>{if(current!==token)return;cancelRead(false);toast('읽기 실패: '+message);};
-  workerTimer=setTimeout(()=>fail('해석 시간이 180초를 초과했습니다. 파일을 나누어 다시 시도해주세요.'),180000);
-  worker.onmessage=({data})=>{if(current!==token)return;if(data.type==='progress')$('loading-message').textContent=data.message;if(data.type==='error')fail(data.message);if(data.type==='result'){
+  let stage='parse';mark(stage,'start');
+  const fail=(message,status='failed')=>{if(current!==token)return;mark(stage,status);cancelRead(false);toast('읽기 실패: '+message);};
+  workerTimer=setTimeout(()=>fail('해석 시간이 180초를 초과했습니다. 파일을 나누어 다시 시도해주세요.','timeout'),180000);
+  worker.onmessage=({data})=>{if(current!==token)return;if(data.type==='progress'){if(data.stage && data.stage!==stage){mark(stage,'ok');stage=data.stage;mark(stage,'start');}$('loading-message').textContent=data.message;}if(data.type==='error')fail(data.message);if(data.type==='result'){
     clearTimeout(workerTimer);worker.terminate();worker=null;$('loading').hidden=true;
-    setProject({schema:'facade-workspace/0.2',name,file:data.file,drawing:data.drawing,raw:data.raw,answers:{},history:[],createdAt:new Date().toISOString()});
+    mark(stage,'ok');mark('validate','start');try{setProject({schema:'facade-workspace/0.2',name,file:data.file,drawing:data.drawing,raw:data.raw,answers:{},history:[],createdAt:new Date().toISOString()});}catch(error){mark('validate','failed');toast('도면 적용 실패: '+error.message);return;}
+    mark('validate','ok',{objects:data.drawing.sourceCount,parserCode:data.drawing.errorCode,missingRefs:data.drawing.references?.filter(r=>r.status==='missing').length,ambiguousRefs:data.drawing.references?.filter(r=>r.status==='ambiguous').length,blockers:data.drawing.issues.filter(i=>i.level==='blocker').length});
     toast(`${data.drawing.sourceCount}개 주도면 객체와 참조 도면을 읽었습니다.${attach?' 연결이 바뀌어 기존 산출과 조건을 초기화했습니다.':''}${data.drawing.issues.some(i=>i.level==='blocker')?' 판독 검사의 차단 항목을 확인해주세요.':''}`);
   }};
   worker.onerror=e=>fail(e.message||'DWG 해석 엔진을 실행하지 못했습니다.');worker.postMessage({sources,mainPath},sources.filter(s=>s.bytes).map(s=>s.bytes));
- }catch(e){if(current===token){cancelRead(false);toast('파일을 열지 못했습니다: '+e.message);}}
+ }catch(e){if(current===token){mark('select','failed');cancelRead(false);toast('파일을 열지 못했습니다: '+e.message);}}
 }
 
 function download(contents,filename,type='application/json;charset=utf-8'){const blob=new Blob([contents],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),15000);}
-const ui=createTakeoffUI({getProject:()=>project,viewer,changed:()=>{scheduleSave();renderState();},toast,download,readChecks:renderChecks,readData:renderData});
+const ui=createTakeoffUI({trace,getProject:()=>project,viewer,changed:()=>{scheduleSave();renderState();},toast,download,readChecks:renderChecks,readData:renderData});
 for(const id of ['upload-top','upload-empty'])$(id).onclick=()=>$('file-input').click();
 $('file-input').accept='.dwg,.json,.gz';$('file-input').onchange=e=>{readFiles(e.target.files);e.target.value='';};
 $('open-folder').onclick=()=>$('folder-input').click();

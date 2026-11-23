@@ -4,7 +4,8 @@ import {reconstructRegions} from './regions.mjs';
 const object=x=>x&&typeof x==='object'&&!Array.isArray(x);
 const MAX_PROJECT_TEXT=400*1024*1024;
 export async function projectDownload(project,threshold=16*1024*1024){
- const blob=new Blob([JSON.stringify(project)],{type:'application/json'});
+ const snapshot=project.raw instanceof Blob?{...project,raw:await project.raw.text()}:project;
+ const blob=new Blob([JSON.stringify(snapshot)],{type:'application/json'});
  if(blob.size>MAX_PROJECT_TEXT)throw Error('해석 데이터가 프로젝트 저장 한도 400 MB를 초과했습니다.');
  if(blob.size<=threshold)return {blob,extension:'.facade.json'};
  const compressed=await new Response(blob.stream().pipeThrough(new CompressionStream('gzip'))).blob();

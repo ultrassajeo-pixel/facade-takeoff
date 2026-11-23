@@ -2,6 +2,12 @@
 
 DWG와 외부참조를 읽고, 필요한 시공 조건을 확인한 뒤 판넬·볼트·후레싱·피스·실리콘을 계산하는 Mac 로컬 웹앱입니다. 노무비·장비비는 제외합니다.
 
+## Mac 설치 및 업데이트
+
+[Mac용 최신 배포](https://github.com/ultrassajeo-pixel/facade-takeoff/releases/latest)에서 pkg 파일을 설치하고 Finder의 사용자 응용 프로그램 폴더에서 Facade Takeoff를 연다. macOS 13.5 이상용이며 현재 패키지는 Developer ID 서명과 Apple 공증이 없는 검증본이다. 다음 릴리스부터 Mac 실행기 창의 **업데이트 확인** 버튼으로 다운로드하고 macOS 설치를 진행한다. 설치를 마친 뒤 설치 창을 닫으면 새 앱을 연다.
+
+배포 담당자는 packaging/macos/release.json의 revision과 bundleVersion을 높이고, python3 bootstrap.py로 판독기를 준비한 뒤 python3 packaging/macos/build.py로 패키지를 만든다. 실행·도면·물량 대조 후 태그 mac-vX.Y.Z.N으로 정식 최신 GitHub Release를 게시하고 같은 버전의 Facade-Takeoff-X.Y.Z.N-Mac.pkg를 첨부한다. 앱이 GitHub의 파일 크기와 SHA-256을 대조한다.
+
 ## 자신의 Codex에서 사용하기
 
 1. GitHub의 **Code → Download ZIP**으로 내려받아 압축을 풉니다.

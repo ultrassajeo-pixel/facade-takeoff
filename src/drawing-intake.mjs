@@ -1,4 +1,9 @@
 import {BUNDLE_SCHEMA,MAX_FILES,MAX_TOTAL_BYTES,logicalPath} from './xrefs.mjs';
+// Keep large lossless raw JSON off the UI thread during worker transfer and autosave.
+export function rawPayload(bundle,threshold=4*1024*1024){
+ const json=JSON.stringify(bundle,(_,value)=>typeof value==='bigint'?value.toString():value);
+ return json.length>=threshold?new Blob([json],{type:'application/json'}):json;
+}
 export function savedBundle(project){
  const bundle=JSON.parse(project?.raw||'null');
  if(bundle?.schema!==BUNDLE_SCHEMA||!Array.isArray(bundle.sources))throw Error('이전 형식의 작업입니다. 주도면과 참조 DWG를 함께 다시 선택해주세요.');

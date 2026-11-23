@@ -2,7 +2,7 @@ import {mkdir,readFile,writeFile,rename} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {validateProject} from './src/project.mjs';
-const defaultDirectory=fileURLToPath(new URL('./.runtime',import.meta.url));
+const defaultDirectory=process.env.FACADE_PROJECT_DIRECTORY || fileURLToPath(new URL('./.runtime',import.meta.url));
 let queue=Promise.resolve();
 export function saveSharedProject(project,directory=defaultDirectory){
  const validated=validateProject(structuredClone(project));delete validated.raw;

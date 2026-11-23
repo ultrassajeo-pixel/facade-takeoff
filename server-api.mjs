@@ -1,5 +1,5 @@
-import {execFile} from 'node:child_process';
-import {fileURLToPath} from 'node:url';
+import {deliverFeedback} from './src/feedback-delivery.mjs';
+import {extractDocx} from './docx-reader.mjs';
 import {askChatGPT,chatgptStatus} from './chatgpt-plan.mjs';
 import {saveSharedProject,readSharedProject} from './project-store.mjs';
 const env=typeof process==='undefined'?{}:process.env;
@@ -33,11 +33,14 @@ export async function handleApi(req,res,pathname,headers){
  if(active>=2){send(429,{error:'진행 중인 작업이 있습니다. 완료 후 다시 시도해주세요.'});return;}
  active++;
  const controller=new AbortController();const onClose=()=>{if(!res.writableEnded)controller.abort();};res.once('close',onClose);
- try{if(pathname==='/api/assistant')send(200,await assistant(await body(req,1000000),fetch,{signal:controller.signal}));
+ try{if(pathname==='/api/feedback'){
+   const report=await body(req,65536);
+   send(201,await deliverFeedback(report,env));
+  }else if(pathname==='/api/assistant')send(200,await assistant(await body(req,1000000),fetch,{signal:controller.signal}));
   else if(pathname==='/api/project/share')send(200,await saveSharedProject(await body(req,25*1024*1024)));
   else if(pathname==='/api/document'){
    const data=await body(req,29*1024*1024);if(typeof data.data!=='string')throw Error('문서 데이터가 없습니다.');
-   const text=await new Promise((resolve,reject)=>{const child=execFile('python3',[fileURLToPath(new URL('./read_docx.py',import.meta.url))],{timeout:15000,maxBuffer:2200000},(error,stdout)=>error?reject(Error('DOCX 문서를 읽지 못했습니다. 손상·암호·용량을 확인해주세요.')):resolve(stdout));child.stdin.end(data.data);});send(200,{text});
+   send(200,{text:await extractDocx(data.data)});
   }else send(404,{error:'요청 경로가 없습니다.'});
  }catch(error){if(!res.destroyed)send(400,{error:error.name==='TimeoutError'?'AI 응답 시간이 초과되었습니다.':error.message});}finally{res.off('close',onClose);active--;}
 }
